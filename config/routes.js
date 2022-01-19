@@ -20,27 +20,9 @@ export default [
   },
   {
     path: '/dashboard',
-    name: 'Dashboard',
+    name: 'dashboard',
     icon: 'smile',
     component: './Dashboard',
-  },
-  {
-    path: '/admin',
-    name: 'admin',
-    icon: 'crown',
-    access: 'canAdmin',
-    component: './Admin',
-    routes: [
-      {
-        path: '/admin/sub-page',
-        name: 'sub-page',
-        icon: 'smile',
-        component: './Dashboard',
-      },
-      {
-        component: './404',
-      },
-    ],
   },
   {
     name: 'list.table-list',

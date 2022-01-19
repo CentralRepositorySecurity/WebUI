@@ -40,12 +40,24 @@ export async function getNotices(options) {
 }
 /** 获取规则列表 GET /api/rule */
 
-export async function rule(params, options) {
-  return request('/api/rule', {
+export async function result(params, options) {
+  console.log(options);
+  const msg = await request('/api/result/list', {
     method: 'GET',
-    params: { ...params },
+    params: {
+      page: params.current,
+      pageSize: params.pageSize,
+    },
     ...(options || {}),
   });
+  return {
+    data: msg.data.list,
+    // success 请返回 true，
+    // 不然 table 会停止解析数据，即使有数据
+    success: true,
+    // 不传会使用 data 的长度，如果是分页一定要传
+    total: msg.data.total,
+  };
 }
 /** 新建规则 PUT /api/rule */
 
@@ -68,6 +80,20 @@ export async function addRule(options) {
 export async function removeRule(options) {
   return request('/api/rule', {
     method: 'DELETE',
+    ...(options || {}),
+  });
+}
+
+export async function processStatistic(options) {
+  return request('/api/process/total', {
+    method: 'GET',
+    ...(options || {}),
+  });
+}
+
+export async function getTodayRecord(options) {
+  return request('/api/result/todayRecord', {
+    method: 'GET',
     ...(options || {}),
   });
 }

@@ -7,7 +7,7 @@ import ProTable from '@ant-design/pro-table';
 import { ModalForm, ProFormText, ProFormTextArea } from '@ant-design/pro-form';
 import ProDescriptions from '@ant-design/pro-descriptions';
 import UpdateForm from './components/UpdateForm';
-import { rule, addRule, updateRule, removeRule } from '@/services/ant-design-pro/api';
+import { result, addRule, updateRule, removeRule } from '@/services/ant-design-pro/api';
 /**
  * @en-US Add node
  * @zh-CN 添加节点
@@ -108,8 +108,7 @@ const TableList = () => {
           defaultMessage="Package Name"
         />
       ),
-      dataIndex: 'name',
-      tip: 'The rule name is the unique key',
+      tip: '危险方法的调用方法',
       render: (dom, entity) => {
         return (
           <a
@@ -118,38 +117,40 @@ const TableList = () => {
               setShowDetail(true);
             }}
           >
-            {dom}
+            {entity.callClass + '.' + entity.callMethod}
           </a>
         );
       },
     },
     {
-      title: <FormattedMessage id="pages.searchTable.titleDesc" defaultMessage="Description" />,
-      dataIndex: 'desc',
-      valueType: 'textarea',
+      title: (
+        <FormattedMessage
+          id="pages.searchTable.updateForm.ruleName.sinkDesc"
+          defaultMessage="Scan Process Number"
+        />
+      ),
+      tip: '危险方法的调用方法',
+      render: (raw) => {
+        return raw.targetClass.replaceAll('/', '.') + '.' + raw.targetMethod;
+      },
     },
     {
       title: (
-        <FormattedMessage
-          id="pages.searchTable.titleCallNo"
-          defaultMessage="Number of service calls"
-        />
+        <FormattedMessage id="pages.searchTable.titleCallNo" defaultMessage="Scan Process Number" />
       ),
-      dataIndex: 'callNo',
+      dataIndex: 'process',
       sorter: true,
       hideInForm: true,
-      renderText: (val) =>
-        `${val}${intl.formatMessage({
-          id: 'pages.searchTable.tenThousand',
-          defaultMessage: ' 万 ',
-        })}`,
+      render: (raw) => {
+        return raw.packageName;
+      },
     },
     {
       title: <FormattedMessage id="pages.searchTable.titleStatus" defaultMessage="Status" />,
-      dataIndex: 'status',
+      dataIndex: 'state',
       hideInForm: true,
       valueEnum: {
-        0: {
+        SOLVED: {
           text: (
             <FormattedMessage
               id="pages.searchTable.nameStatus.default"
@@ -158,19 +159,19 @@ const TableList = () => {
           ),
           status: 'Default',
         },
-        1: {
+        PENDING: {
           text: (
             <FormattedMessage id="pages.searchTable.nameStatus.running" defaultMessage="Running" />
           ),
           status: 'Processing',
         },
-        2: {
+        FINISHED: {
           text: (
             <FormattedMessage id="pages.searchTable.nameStatus.online" defaultMessage="Online" />
           ),
           status: 'Success',
         },
-        3: {
+        ERROR: {
           text: (
             <FormattedMessage
               id="pages.searchTable.nameStatus.abnormal"
@@ -183,22 +184,48 @@ const TableList = () => {
     },
     {
       title: (
-        <FormattedMessage
-          id="pages.searchTable.titleUpdatedAt"
-          defaultMessage="Last scheduled time"
-        />
+        <FormattedMessage id="pages.searchTable.createAt" defaultMessage="Last scheduled time" />
       ),
       sorter: true,
-      dataIndex: 'updatedAt',
+      dataIndex: 'createTime',
       valueType: 'dateTime',
       renderFormItem: (item, { defaultRender, ...rest }, form) => {
-        const status = form.getFieldValue('status');
+        const state = form.getFieldValue('state');
 
-        if (`${status}` === '0') {
+        if (`${state}` === '0') {
           return false;
         }
 
-        if (`${status}` === '3') {
+        if (`${state}` === '3') {
+          return (
+            <Input
+              {...rest}
+              placeholder={intl.formatMessage({
+                id: 'pages.searchTable.exception',
+                defaultMessage: 'Please enter the reason for the exception!',
+              })}
+            />
+          );
+        }
+
+        return defaultRender(item);
+      },
+    },
+    {
+      title: (
+        <FormattedMessage id="pages.searchTable.updatedAt" defaultMessage="Last scheduled time" />
+      ),
+      sorter: true,
+      dataIndex: 'updateTime',
+      valueType: 'dateTime',
+      renderFormItem: (item, { defaultRender, ...rest }, form) => {
+        const state = form.getFieldValue('state');
+
+        if (`${state}` === '0') {
+          return false;
+        }
+
+        if (`${state}` === '3') {
           return (
             <Input
               {...rest}
@@ -259,7 +286,12 @@ const TableList = () => {
             <PlusOutlined /> <FormattedMessage id="pages.searchTable.new" defaultMessage="New" />
           </Button>,
         ]}
-        request={rule}
+        request={(params, sorter, filter) => {
+          // todo: 未生效
+          // 表单搜索项会从 params 传入，传递给后端接口。
+          console.log(params, sorter, filter);
+          return result(params, sorter);
+        }}
         columns={columns}
         rowSelection={{
           onChange: (_, selectedRows) => {
@@ -382,15 +414,15 @@ const TableList = () => {
         }}
         closable={false}
       >
-        {currentRow?.name && (
+        {currentRow?.callClass && (
           <ProDescriptions
-            column={2}
-            title={currentRow?.name}
+            column={1}
+            title={currentRow?.callClass}
             request={async () => ({
               data: currentRow || {},
             })}
             params={{
-              id: currentRow?.name,
+              id: currentRow?.id,
             }}
             columns={columns}
           />
